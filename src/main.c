@@ -33,9 +33,6 @@ int main(struct multiboot *mboot_ptr) {
     // Don't trample our module with placement accesses, please!
     placement_address = initrd_end;
 
-    // Start paging.
-    //initialise_paging();
-
     // Initialise the initial ramdisk, and set it as the filesystem root.
     fs_root = initialise_initrd(initrd_location);
     init_worker();

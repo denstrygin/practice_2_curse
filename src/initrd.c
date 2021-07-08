@@ -5,7 +5,7 @@
 
 struct dirent dirent;
 
-static u32int initrd_read(fs_node_t *node, u32int offset, u32int size, u8int *buffer)
+u32int initrd_read(fs_node_t *node, u32int offset, u32int size, u8int *buffer)
 {
     initrd_file_header_t header = file_headers[node->inode];
     if (offset > header.length)
@@ -16,7 +16,7 @@ static u32int initrd_read(fs_node_t *node, u32int offset, u32int size, u8int *bu
     return size;
 }
 
-static struct dirent *initrd_readdir(fs_node_t *node, u32int index)
+struct dirent *initrd_readdir(fs_node_t *node, u32int index)
 {
     if (node == initrd_root && index == 0)
     {
@@ -34,7 +34,7 @@ static struct dirent *initrd_readdir(fs_node_t *node, u32int index)
     return &dirent;
 }
 
-static fs_node_t *initrd_finddir(fs_node_t *node, char *name)
+fs_node_t *initrd_finddir(fs_node_t *node, char *name)
 {
     if (node == initrd_root &&
         !strcmp(name, "dev") )
@@ -94,8 +94,6 @@ fs_node_t *initialise_initrd(u32int location)
         // of memory.
         file_headers[i].offset += location;
         // Create a new file node.
-        //strcpy(root_nodes[i].name, &file_headers[i].name);
-        //strcpy(root_nodes[i].name, filename);
         root_nodes[i].mask = root_nodes[i].uid = root_nodes[i].gid = 0;
         root_nodes[i].length = 0;
         root_nodes[i].inode = i;

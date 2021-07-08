@@ -19,11 +19,6 @@ void create_file (u8int type, u8int inode) {
             filename[5] = '0';
         }
         strcpy(root_nodes[i].name, filename);
-        // monitor_write("created ");
-        // monitor_write(filename);
-        // monitor_write("\n");
-        // monitor_write(root_nodes[i].name); monitor_write_dec(i);
-        // monitor_write("\n");
     } else if (type == FS_DIRECTORY) {
         dir[4]++;
         if (dir[4] > '9') {
@@ -37,10 +32,10 @@ void create_file (u8int type, u8int inode) {
     root_nodes[i].gid = 0;
     root_nodes[i].length = 0;
     root_nodes[i].flags = type;
-    //root_nodes[i].read = type == FS_FILE ? &initrd_read : 0;
+    root_nodes[i].read = type == FS_FILE ? &initrd_read : 0;
     root_nodes[i].write = 0;
-    //root_nodes[i].readdir = type == FS_FILE ? &initrd_readdir : 0;
-    //root_nodes[i].finddir = type == FS_FILE ? &initrd_finddir : 0;
+    root_nodes[i].readdir = type == FS_FILE ? &initrd_readdir : 0;
+    root_nodes[i].finddir = type == FS_FILE ? &initrd_finddir : 0;
     root_nodes[i].open = 0;
     root_nodes[i].close = 0;
     root_nodes[i].impl = 0;
@@ -57,10 +52,13 @@ void remove_file (u8int inode) {
     }
     if (!file_exist[i]) {
         monitor_write("File/directiry doesn't exist\n\n");
+        return;
     } else {
         file_exist[i] = 0;
     }
-    monitor_write("Deleted file!\n\n");
+    monitor_write("Deleted file ");
+    monitor_write(root_nodes[i].name);
+    monitor_write("!\n\n");
 }
 
 void ls () {
@@ -73,16 +71,6 @@ void ls () {
             ++i;
             continue;
         }
-        // while (!file_exist[i]) {
-        //     ++i;
-        //     if (i > 63) {
-        //         monitor_write("\n");
-        //         return;
-        //     }
-        // }
-        //     monitor_write("checking ");
-        // monitor_write_dec(i);
-        // monitor_write("\n");
         monitor_write(tab_fs);
         monitor_write(node->name);
         fs_node_t *fsnode = finddir_fs(fs_root, node->name);
@@ -93,15 +81,7 @@ void ls () {
         }
         else
         {
-            monitor_write(" (file)\n"); //monitor_write(tab_fs); monitor_write(tab_fs);
-            // monitor_write("contents: \"");
-            // char buf[256];
-            // u32int sz = read_fs(fsnode, 0, 256, buf);
-            // int j;
-            // for (j = 0; j < sz; j++)
-            //     monitor_put(buf[j]);
-            
-            // monitor_write("\"\n");
+            monitor_write(" (file)\n");
         }
         i++;
     }
