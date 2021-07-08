@@ -12,6 +12,12 @@
 
 extern u32int placement_address;
 
+void send_interrupt(COMM_TYPE type, u8int inode) {
+    command_fs = type;
+    current_inode = inode;
+    asm volatile ("int $0x21");
+}
+
 int main(struct multiboot *mboot_ptr) {
     // Initialise all the ISRs and segmentation
     init_descriptor_tables();
@@ -21,7 +27,7 @@ int main(struct multiboot *mboot_ptr) {
     //asm volatile("sti");
     // Find the location of our initial ramdisk.
     ASSERT(mboot_ptr->mods_count > 0);
-    monitor_write("ASSERT SUCCESS!!!\n");
+    monitor_write("VFS DEMO\n\n");
     u32int initrd_location = *((u32int*)mboot_ptr->mods_addr);
     u32int initrd_end = *(u32int*)(mboot_ptr->mods_addr+4);
     // Don't trample our module with placement accesses, please!
@@ -33,15 +39,15 @@ int main(struct multiboot *mboot_ptr) {
     // Initialise the initial ramdisk, and set it as the filesystem root.
     fs_root = initialise_initrd(initrd_location);
     init_worker();
-    command_fs = CREATE_FILE;
-    asm volatile ("int $0x21");
-    command_fs = CREATE_DIR;
-    asm volatile ("int $0x21");
-    command_fs = REMOVE_FILE;
-    asm volatile ("int $0x21");
-    command_fs = LS;
-    asm volatile ("int $0x21");
-    //asm volatile("int %0" : "a=" (IRQ1));
+
+    //creating file with inode 2 and dir with inode 7
+    send_interrupt(CREATE_FILE, 2);
+    send_interrupt(CREATE_DIR, 7);
+    send_interrupt(LS, 0);
+    //removing file with inode 5 (doesn't exist) and 7
+    send_interrupt(REMOVE_FILE, 5);
+    send_interrupt(REMOVE_FILE, 7);
+    send_interrupt(LS, 0);
 
     return 0;
 }

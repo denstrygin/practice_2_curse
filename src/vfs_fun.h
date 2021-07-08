@@ -11,17 +11,16 @@ typedef enum COMM_TYPE {
     CREATE_FILE,
     CREATE_DIR,
     REMOVE_FILE,
-    REMOVE_DIR,
     LS
 } COMM_TYPE;
 
-char filename[128];
+int current_inode;
 extern char *tab_fs;
-int file_exist[64] = {0};
+int file_exist[64];
 COMM_TYPE command_fs;
 
-void create_file (u8int type);
-void remove_file (u8int type);
+void create_file (u8int type, u8int inode);
+void remove_file (u8int inode);
 void ls ();
 void init_worker ();
 

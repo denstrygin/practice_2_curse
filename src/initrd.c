@@ -3,13 +3,6 @@
 
 #include "initrd.h"
 
-initrd_header_t *initrd_header;     // The header.
-initrd_file_header_t *file_headers; // The list of file headers.
-fs_node_t *initrd_root;             // Our root directory node.
-fs_node_t *initrd_dev;              // We also add a directory node for /dev, so we can mount devfs later on.
-fs_node_t *root_nodes;              // List of file nodes.
-int nroot_nodes;                    // Number of file nodes.
-
 struct dirent dirent;
 
 static u32int initrd_read(fs_node_t *node, u32int offset, u32int size, u8int *buffer)
@@ -33,11 +26,11 @@ static struct dirent *initrd_readdir(fs_node_t *node, u32int index)
       return &dirent;
     }
 
-    if (index-1 >= nroot_nodes)
+    if (index >= nroot_nodes)
         return 0;
-    strcpy(dirent.name, root_nodes[index-1].name);
-    dirent.name[strlen(root_nodes[index-1].name)] = 0;
-    dirent.ino = root_nodes[index-1].inode;
+    strcpy(dirent.name, root_nodes[index].name);
+    dirent.name[strlen(root_nodes[index].name)] = 0;
+    dirent.ino = root_nodes[index].inode;
     return &dirent;
 }
 
@@ -89,7 +82,7 @@ fs_node_t *initialise_initrd(u32int location)
     initrd_dev->impl = 0;
 
     //nroot_nodes = initrd_header->nfiles;
-    nroot_nodes = 5;
+    nroot_nodes = 64;
     root_nodes = (fs_node_t*)kmalloc(sizeof(fs_node_t) * nroot_nodes);
 
     // For every file...
@@ -102,12 +95,12 @@ fs_node_t *initialise_initrd(u32int location)
         file_headers[i].offset += location;
         // Create a new file node.
         //strcpy(root_nodes[i].name, &file_headers[i].name);
-        strcpy(root_nodes[i].name, "amogus.txt");
+        //strcpy(root_nodes[i].name, filename);
         root_nodes[i].mask = root_nodes[i].uid = root_nodes[i].gid = 0;
         root_nodes[i].length = 0;
         root_nodes[i].inode = i;
-        root_nodes[i].flags = FS_FILE;
-        root_nodes[i].read = &initrd_read;
+        root_nodes[i].flags = 0;
+        root_nodes[i].read = 0;
         root_nodes[i].write = 0;
         root_nodes[i].readdir = 0;
         root_nodes[i].finddir = 0;
