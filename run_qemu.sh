@@ -2,4 +2,7 @@
 
 #запускаем в эмуляторе qemu
 
-qemu-system-i386 -hda hdd.img
+# ./make_initrd test.txt test.txt test2.txt test2.txt
+./make_initrd
+sudo make update_image
+sudo qemu-system-i386 -initrd initrd.img -kernel src/MiniOS.bin
