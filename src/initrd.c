@@ -88,21 +88,23 @@ fs_node_t *initialise_initrd(u32int location)
     initrd_dev->ptr = 0;
     initrd_dev->impl = 0;
 
-    root_nodes = (fs_node_t*)kmalloc(sizeof(fs_node_t) * initrd_header->nfiles);
-    nroot_nodes = initrd_header->nfiles;
+    //nroot_nodes = initrd_header->nfiles;
+    nroot_nodes = 5;
+    root_nodes = (fs_node_t*)kmalloc(sizeof(fs_node_t) * nroot_nodes);
 
     // For every file...
     int i;
-    for (i = 0; i < initrd_header->nfiles; i++)
+    for (i = 0; i < nroot_nodes; i++)
     {
         // Edit the file's header - currently it holds the file offset
         // relative to the start of the ramdisk. We want it relative to the start
         // of memory.
         file_headers[i].offset += location;
         // Create a new file node.
-        strcpy(root_nodes[i].name, &file_headers[i].name);
+        //strcpy(root_nodes[i].name, &file_headers[i].name);
+        strcpy(root_nodes[i].name, "amogus.txt");
         root_nodes[i].mask = root_nodes[i].uid = root_nodes[i].gid = 0;
-        root_nodes[i].length = file_headers[i].length;
+        root_nodes[i].length = 0;
         root_nodes[i].inode = i;
         root_nodes[i].flags = FS_FILE;
         root_nodes[i].read = &initrd_read;

@@ -7,7 +7,7 @@
 #include "paging.h"
 
 // end is defined in the linker script.
-extern u32int end;
+u32int end = 0;
 u32int placement_address = (u32int)&end;
 extern page_directory_t *kernel_directory;
 heap_t *kheap=0;

@@ -1,3 +1,5 @@
+#ifndef ISR_H
+#define ISR_H
 //
 // isr.h -- Interface and structures for high level interrupt service routines.
 //          Part of this code is modified from Bran's kernel development tutorials.
@@ -37,3 +39,5 @@ typedef struct registers
 // first parameter.
 typedef void (*isr_t)(registers_t);
 void register_interrupt_handler(u8int n, isr_t handler);
+
+#endif

@@ -29,5 +29,5 @@ SECTIONS
         . = ALIGN(4096);
     }
 
-    end = .; _end = .; __end = .;
+    endl = .; _end = .; __end = .;
 }
