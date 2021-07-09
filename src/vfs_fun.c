@@ -2,11 +2,13 @@
 
 char *tab_fs = "  ";
 
-void create_file (u8int type, u8int inode) {
+int create_file (u8int type, u8int inode) {
     u8int i = inode - 1;
     if (file_exist[i]) {
-        monitor_write("File/directiry already exist\n\n");
-        return;
+        monitor_write("File/directiry ");
+        monitor_write(root_nodes[i].name);
+        monitor_write(" already exist\n\n");
+        return 1;
     } else {
         file_exist[i] = 1;
     }
@@ -42,29 +44,34 @@ void create_file (u8int type, u8int inode) {
     monitor_write("Created file ");
     monitor_write(root_nodes[i].name);
     monitor_write("!\n\n");
+    return 0;
 }
 
-void remove_file (u8int inode) {
+int remove_file (u8int inode) {
     u8int i = inode - 1;
     if (i == 0) {
         monitor_write("Can't delete dev\n\n");
-        return;
+        return 1;
     }
     if (!file_exist[i]) {
-        monitor_write("File/directiry doesn't exist\n\n");
-        return;
+        monitor_write("File/directiry ");
+        monitor_write(root_nodes[i].name);
+        monitor_write(" doesn't exist\n\n");
+        return 2;
     } else {
         file_exist[i] = 0;
     }
     monitor_write("Deleted file ");
     monitor_write(root_nodes[i].name);
     monitor_write("!\n\n");
+    return 0;
 }
 
 void ls () {
     int i = 0;
     struct dirent *node = 0;
-    monitor_write("/ (root)\n");
+    monitor_write(fs_root->name);
+    monitor_write(" (root)\n");
     while ( (node = readdir_fs(fs_root, i)) != 0)
     {
         if (!file_exist[i]) {
@@ -91,13 +98,13 @@ void ls () {
 static void worker (registers_t regs) {
     switch (command_fs) {
         case CREATE_FILE:
-            create_file(FS_FILE, current_inode);
+            error_code = create_file(FS_FILE, current_inode);
             break;
         case CREATE_DIR:
-            create_file(FS_DIRECTORY, current_inode);
+            error_code = create_file(FS_DIRECTORY, current_inode);
             break;
         case REMOVE_FILE:
-            remove_file(current_inode);
+            error_code = remove_file(current_inode);
             break;
         case LS:
             ls();
