@@ -17,12 +17,11 @@ typedef enum COMM_TYPE {
 int current_inode;
 int error_code;
 extern char *tab_fs;
-int file_exist[64];
 COMM_TYPE command_fs;
 
 int create_file (u8int type, u8int inode);
 int remove_file (u8int inode);
-void ls ();
+void ls (fs_node_t *fs_node, int step);
 void init_worker ();
 
 #endif

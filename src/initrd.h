@@ -34,5 +34,5 @@ fs_node_t *initrd_root;             // Our root directory node.
 fs_node_t *initrd_dev;              // We also add a directory node for /dev, so we can mount devfs later on.
 fs_node_t *root_nodes;              // List of file nodes.
 int nroot_nodes;                    // Number of file nodes.
-
+extern int max_count_of_file;
 #endif

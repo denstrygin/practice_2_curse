@@ -3,17 +3,20 @@
 char *tab_fs = "  ";
 
 int create_file (u8int type, u8int inode) {
-    u8int i = inode - 1;
-    if (file_exist[i]) {
+    u8int i = inode;
+    if (i >= max_count_of_file) {
+        monitor_write("Incorrect inode!\n\n");
+        return 1;
+    }
+    if (root_nodes[i].flags) {
         monitor_write("File/directiry ");
         monitor_write(root_nodes[i].name);
         monitor_write(" already exist\n\n");
-        return 1;
-    } else {
-        file_exist[i] = 1;
+        return 2;
     }
     static char *filename = "file00.txt";
     static char *dir = "dir00";
+    ++nroot_nodes;
     if (type == FS_FILE) {
         filename[5]++;
         if (filename[5] > '9') {
@@ -21,6 +24,7 @@ int create_file (u8int type, u8int inode) {
             filename[5] = '0';
         }
         strcpy(root_nodes[i].name, filename);
+        root_nodes[i].name[strlen(root_nodes[i].name)] = 0;
     } else if (type == FS_DIRECTORY) {
         dir[4]++;
         if (dir[4] > '9') {
@@ -28,6 +32,7 @@ int create_file (u8int type, u8int inode) {
             dir[4] = '0';
         }
         strcpy(root_nodes[i].name, dir);
+        root_nodes[i].name[strlen(root_nodes[i].name)] = 0;
     }
     root_nodes[i].mask = 6;
     root_nodes[i].uid = 0;
@@ -36,12 +41,17 @@ int create_file (u8int type, u8int inode) {
     root_nodes[i].flags = type;
     root_nodes[i].read = type == FS_FILE ? &initrd_read : 0;
     root_nodes[i].write = 0;
-    root_nodes[i].readdir = type == FS_FILE ? &initrd_readdir : 0;
-    root_nodes[i].finddir = type == FS_FILE ? &initrd_finddir : 0;
+    root_nodes[i].readdir = type == FS_DIRECTORY ? &initrd_readdir : 0;
+    root_nodes[i].finddir = type == FS_DIRECTORY ? &initrd_finddir : 0;
     root_nodes[i].open = 0;
     root_nodes[i].close = 0;
     root_nodes[i].impl = 0;
-    monitor_write("Created file ");
+    monitor_write("Created ");
+    if (type == FS_FILE) {
+        monitor_write("file ");
+    } else {
+        monitor_write("directory ");
+    }
     monitor_write(root_nodes[i].name);
     monitor_write("!\n\n");
     return 0;
@@ -49,50 +59,78 @@ int create_file (u8int type, u8int inode) {
 
 int remove_file (u8int inode) {
     u8int i = inode - 1;
-    if (i == 0) {
-        monitor_write("Can't delete dev\n\n");
+    if (i > 64) {
+        monitor_write("Incorrect inode!\n\n");
         return 1;
     }
-    if (!file_exist[i]) {
+    if (i == 0) {
+        monitor_write("Can't delete dev\n\n");
+        return 2;
+    }
+    u32int type = root_nodes[i].flags;
+    if (!type) {
         monitor_write("File/directiry ");
         monitor_write(root_nodes[i].name);
         monitor_write(" doesn't exist\n\n");
-        return 2;
+        return 3;
     } else {
-        file_exist[i] = 0;
+        root_nodes[i].flags = 0;
     }
-    monitor_write("Deleted file ");
+    monitor_write("Deleted ");
+    if (type == FS_FILE) {
+        monitor_write("file ");
+    } else {
+        monitor_write("directory ");
+    }
     monitor_write(root_nodes[i].name);
     monitor_write("!\n\n");
     return 0;
 }
 
-void ls () {
+void ls (fs_node_t *fs_node, int step) {
     int i = 0;
     struct dirent *node = 0;
-    monitor_write(fs_root->name);
-    monitor_write(" (root)\n");
-    while ( (node = readdir_fs(fs_root, i)) != 0)
+    if (fs_node == fs_root) {
+        monitor_write(fs_node->name);
+        monitor_write(" (root)\n");
+    }
+    while ( (node = readdir_fs(fs_node, i)) != 0)
     {
-        if (!file_exist[i]) {
+        fs_node_t *fsnode = finddir_fs(fs_node, node->name);
+        if (fsnode->flags == 0) {
             ++i;
             continue;
         }
-        monitor_write(tab_fs);
-        monitor_write(node->name);
-        fs_node_t *fsnode = finddir_fs(fs_root, node->name);
-
+        for (int j = 0; j < step + 1; ++j) {
+            monitor_write(tab_fs);
+        }
+        //monitor_write_dec(fsnode->flags);
         if ((fsnode->flags&0x7) == FS_DIRECTORY)
         {
+            monitor_write(node->name);
             monitor_write(" (directory)\n");
+            //ls(fsnode, step + 1);
         }
-        else
+        else if ((fsnode->flags&0x7) == FS_FILE)
         {
+            monitor_write(node->name);
             monitor_write(" (file)\n");
+            for (int j = 0; j < step + 2; ++j) {
+                monitor_write(tab_fs);
+            }
+            monitor_write("contents: \"");
+            char buf[256];
+            u32int sz = read_fs(fsnode, 0, 256, buf);
+            for (int j = 0; j < sz; j++) {
+                monitor_put(buf[j]);
+            }
+            monitor_write("\"\n");
         }
         i++;
     }
-    monitor_write("\n");
+    if (fs_node == fs_root) {
+        monitor_write("\n");
+    }
 }
 
 static void worker (registers_t regs) {
@@ -107,7 +145,7 @@ static void worker (registers_t regs) {
             error_code = remove_file(current_inode);
             break;
         case LS:
-            ls();
+            ls(fs_root, 0);
             break;
         default:
             monitor_write("Incorrect command, try again\n");
@@ -116,9 +154,5 @@ static void worker (registers_t regs) {
 }
 
 void init_worker () {
-    for (int i = 0; i < 64; ++i) {
-        file_exist[i] = 0;
-    }
-    file_exist[0] = 1;
     register_interrupt_handler(IRQ1, &worker);
 }

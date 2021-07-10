@@ -38,13 +38,13 @@ int main(struct multiboot *mboot_ptr) {
     init_worker();
 
     //creating file with inode 2 and dir with inode 7
-    send_interrupt(CREATE_FILE, 2);
-    send_interrupt(CREATE_DIR, 7);
+    //send_interrupt(CREATE_FILE, 2);
+    //send_interrupt(CREATE_DIR, 3);
     send_interrupt(LS, 0);
     //removing file with inode 5 (doesn't exist) and 7
-    send_interrupt(REMOVE_FILE, 5);
-    send_interrupt(REMOVE_FILE, 7);
-    send_interrupt(LS, 0);
+    //send_interrupt(REMOVE_FILE, 5);
+    //send_interrupt(REMOVE_FILE, 7);
+    //send_interrupt(LS, 0);
 
     return 0;
 }
