@@ -6,6 +6,7 @@
 
 #include "common.h"
 #include "fs.h"
+#include "isr.h"
 
 u32int initrd_read(fs_node_t *node, u32int offset, u32int size, u8int *buffer);
 struct dirent *initrd_readdir(fs_node_t *node, u32int index);

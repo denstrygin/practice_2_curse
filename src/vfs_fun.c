@@ -1,6 +1,9 @@
 #include "vfs_fun.h"
 
 char *tab_fs = "  ";
+extern int current_inode;
+extern int error_code;
+extern COMM_TYPE command_fs;
 
 int create_file (u8int type, u8int inode) {
     u8int i = inode;

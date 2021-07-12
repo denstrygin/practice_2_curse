@@ -11,6 +11,9 @@
 #include "vfs_fun.h"
 
 extern u32int placement_address;
+extern int current_inode;
+extern int error_code;
+extern COMM_TYPE command_fs;
 
 void send_interrupt(COMM_TYPE type, u8int inode) {
     command_fs = type;

@@ -6,6 +6,44 @@
 struct dirent dirent;
 int max_count_of_file = 64;
 
+static void read_disk (registers_t regs) {
+    // For every file...
+    int i;
+    for (i = 0; i < nroot_nodes; i++) {
+        // Edit the file's header - currently it holds the file offset
+        // relative to the start of the ramdisk. We want it relative to the start
+        // of memory.
+        // Create a new file node.
+        file_headers[i - 0].offset += (u32int) initrd_header;
+        strcpy(root_nodes[i].name, &file_headers[i - 0].name);
+        root_nodes[i].mask = root_nodes[i].uid = root_nodes[i].gid = 0;
+        root_nodes[i].length = file_headers[i - 0].length;
+        root_nodes[i].inode = i;
+        root_nodes[i].flags = FS_FILE;
+        root_nodes[i].read = &initrd_read;
+        root_nodes[i].write = 0;
+        root_nodes[i].readdir = 0;
+        root_nodes[i].finddir = 0;
+        root_nodes[i].open = 0;
+        root_nodes[i].close = 0;
+        root_nodes[i].impl = 0;
+    }
+    for (i = nroot_nodes; i < max_count_of_file; i++)
+    {
+        root_nodes[i].mask = root_nodes[i].uid = root_nodes[i].gid = 0;
+        root_nodes[i].length = 0;
+        root_nodes[i].inode = i;
+        root_nodes[i].flags = 0;
+        root_nodes[i].read = 0;
+        root_nodes[i].write = 0;
+        root_nodes[i].readdir = 0;
+        root_nodes[i].finddir = 0;
+        root_nodes[i].open = 0;
+        root_nodes[i].close = 0;
+        root_nodes[i].impl = 0;
+    }
+}
+
 u32int initrd_read(fs_node_t *node, u32int offset, u32int size, u8int *buffer)
 {
     initrd_file_header_t header = file_headers[node->inode];
@@ -50,6 +88,7 @@ fs_node_t *initrd_finddir(fs_node_t *node, char *name)
 
 fs_node_t *initialise_initrd(u32int location)
 {
+    register_interrupt_handler(IRQ2, &read_disk);
     // Initialise the main and file header pointers and populate the root directory.
     initrd_header = (initrd_header_t *)location;
     file_headers = (initrd_file_header_t *) (location+sizeof(initrd_header_t));
@@ -87,40 +126,6 @@ fs_node_t *initialise_initrd(u32int location)
     //nroot_nodes = max_count_of_file;
     root_nodes = (fs_node_t*)kmalloc(sizeof(fs_node_t) * max_count_of_file);
 
-    // For every file...
-    int i;
-    for (i = 0; i < nroot_nodes; i++) {
-        file_headers[i - 0].offset += location;
-        strcpy(root_nodes[i].name, &file_headers[i - 0].name);
-        root_nodes[i].mask = root_nodes[i].uid = root_nodes[i].gid = 0;
-        root_nodes[i].length = file_headers[i - 0].length;
-        root_nodes[i].inode = i;
-        root_nodes[i].flags = FS_FILE;
-        root_nodes[i].read = &initrd_read;
-        root_nodes[i].write = 0;
-        root_nodes[i].readdir = 0;
-        root_nodes[i].finddir = 0;
-        root_nodes[i].open = 0;
-        root_nodes[i].close = 0;
-        root_nodes[i].impl = 0;
-    }
-    for (i = nroot_nodes; i < max_count_of_file; i++)
-    {
-        // Edit the file's header - currently it holds the file offset
-        // relative to the start of the ramdisk. We want it relative to the start
-        // of memory.
-        // Create a new file node.
-        root_nodes[i].mask = root_nodes[i].uid = root_nodes[i].gid = 0;
-        root_nodes[i].length = 0;
-        root_nodes[i].inode = i;
-        root_nodes[i].flags = 0;
-        root_nodes[i].read = 0;
-        root_nodes[i].write = 0;
-        root_nodes[i].readdir = 0;
-        root_nodes[i].finddir = 0;
-        root_nodes[i].open = 0;
-        root_nodes[i].close = 0;
-        root_nodes[i].impl = 0;
-    }
+    asm volatile ("int $0x22");
     return initrd_root;
 }
